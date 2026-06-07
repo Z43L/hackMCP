@@ -1,0 +1,31 @@
+{
+  "name": "hackmcp",
+  "version": "0.1.0",
+  "description": "MCP knowledge base for pentesting and bug bounty - Context7 style",
+  "type": "module",
+  "main": "dist/index.js",
+  "bin": {
+    "hackmcp": "dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "tsc --watch"
+  },
+  "keywords": [
+    "mcp",
+    "pentesting",
+    "bugbounty",
+    "security",
+    "hacking"
+  ],
+  "author": "HackMCP",
+  "license": "MIT",
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.29.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.19.20",
+    "typescript": "^5.9.3"
+  }
+}
