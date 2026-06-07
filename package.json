@@ -1,7 +1,7 @@
 {
   "name": "hackmcp",
   "version": "0.1.0",
-  "description": "MCP knowledge base for pentesting and bug bounty - Context7 style",
+  "description": "MCP knowledge base for pentesting and bug bounty - Context7 style. Supports stdio and HTTP/SSE transports.",
   "type": "module",
   "main": "dist/index.js",
   "bin": {
@@ -10,6 +10,7 @@
   "scripts": {
     "build": "tsc",
     "start": "node dist/index.js",
+    "start:http": "TRANSPORT=http node dist/index.js",
     "dev": "tsc --watch"
   },
   "keywords": [
@@ -17,15 +18,23 @@
     "pentesting",
     "bugbounty",
     "security",
-    "hacking"
+    "hacking",
+    "http",
+    "sse",
+    "model-context-protocol"
   ],
   "author": "HackMCP",
   "license": "MIT",
   "dependencies": {
-    "@modelcontextprotocol/sdk": "^1.29.0"
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "cors": "^2.8.5",
+    "express": "^4.21.2"
   },
   "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^4.17.23",
     "@types/node": "^22.19.20",
+    "@vercel/node": "^5.8.12",
     "typescript": "^5.9.3"
   }
 }

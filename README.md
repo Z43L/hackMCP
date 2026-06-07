@@ -2,7 +2,7 @@
 
 **MCP knowledge base for pentesting and bug bounty hunting, Context7-style.**
 
-HackMCP exposes a curated offensive-security knowledge base through the [Model Context Protocol](https://modelcontextprotocol.io/), so any MCP-compatible client (Claude Desktop, Cursor, Zed, etc.) can search vulnerabilities, fetch payloads, browse wordlists, and read full HackTricks guides without leaving the editor.
+HackMCP exposes a curated offensive-security knowledge base through the [Model Context Protocol](https://modelcontextprotocol.io/). It can be consumed by any MCP-compatible client (Claude Desktop, Cursor, Zed, etc.) over **stdio** (local) or **HTTP/SSE** (remote, deployable to Vercel/Fly/Railway).
 
 > All exploits and payloads are for **authorized security testing only** (your own apps, bug bounty programs with explicit scope, or lab/CTF environments).
 
@@ -32,7 +32,13 @@ Browse the knowledge base as URIs:
 Reusable templates that pull in the right tool calls automatically:
 `analyze_vulnerability`, `bug_bounty_report`, `pentest_plan`, `payload_crafter`, `hunt_ideas`, `triage_finding`, `review_code_for_vulns`, `chain_exploit`
 
-## 📚 Knowledge base sources
+### 🌐 Two transport modes
+| Mode | Use case | How |
+|---|---|---|
+| **stdio** (default) | Local editor integration (Claude Desktop, Cursor, Zed) | `node dist/index.js` |
+| **HTTP** (Streamable HTTP) | Remote/hosted deployment (Vercel, Fly, Railway) | `TRANSPORT=http node dist/index.js` |
+
+## 📚 Knowledge base
 - **[HackTricks](https://github.com/HackTricks-wiki/hacktricks)** — 981 pages indexed (web, network, mobile, cloud, AD, privesc, reversing, AI, ...)
 - **Curated catalog** — 24 web vulnerabilities (CWE/OWASP-mapped), 80+ payloads, 10 wordlists, 4 full methodologies
 - **No network calls at runtime** — HackTricks is cloned once, indexed in-memory, then served from disk
@@ -41,28 +47,74 @@ Reusable templates that pull in the right tool calls automatically:
 
 ### 1. Clone & build
 ```bash
-git clone https://github.com/HackTricks-wiki/hacktricks.git   # into ./hacktricks
+git clone https://github.com/Z43L/hackMCP.git
+cd hackMCP
+
+# HackTricks should already be bundled (see /hacktricks/src)
+# If not, clone it:
+# git clone --depth 1 https://github.com/HackTricks-wiki/hacktricks.git
+
 npm install
 npm run build
 ```
 
 The `hacktricks/` directory must sit next to `src/`, or you can set `HACKTRICKS_PATH` to point at it.
 
-### 2. Add to your MCP client
+### 2a. Stdio mode (local) — Claude Desktop
 
-**Claude Desktop** (`~/Library/Application Support/Claude/claude_desktop_config.json`):
+`~/Library/Application Support/Claude/claude_desktop_config.json`:
 ```json
 {
   "mcpServers": {
     "hackmcp": {
       "command": "node",
-      "args": ["/absolute/path/to/hackmcp/dist/index.js"]
+      "args": ["/absolute/path/to/hackMCP/dist/index.js"]
     }
   }
 }
 ```
 
-**Cursor / Zed / any stdio MCP client** — same config.
+Restart Claude — you get 8 tools + 12 resources + 8 prompts.
+
+### 2b. HTTP mode (remote) — any HTTP MCP client
+
+```bash
+TRANSPORT=http PORT=3000 MCP_STATELESS=false node dist/index.js
+# Server on http://localhost:3000/mcp
+# Health: http://localhost:3000/health
+# Info:   http://localhost:3000/info
+```
+
+## ☁️ Deploy to Vercel
+
+The repo is pre-configured for Vercel serverless deployment:
+
+```bash
+# One-time
+vercel link
+# Deploy
+vercel --prod
+```
+
+After deploy, the MCP endpoint is at:
+```
+https://<your-project>.vercel.app/mcp
+```
+
+Configure your HTTP MCP client to point there.
+
+**Vercel-specific notes:**
+- The server runs in **stateless** mode (`MCP_STATELESS=true`) for serverless compatibility
+- HackTricks (~160MB) is bundled with the deployment — no external storage needed
+- First request after a cold start may take 1-2s while the HackTricks index loads
+
+### Manual Vercel setup
+If you prefer the dashboard:
+1. Import this repo at [vercel.com/new](https://vercel.com/new)
+2. Framework preset: **Other**
+3. Build command: `npm run build`
+4. Output directory: leave empty (Vercel auto-detects `api/`)
+5. Memory: **3008 MB** (function setting) so HackTricks index fits
 
 ## 🧪 Example usage
 
@@ -73,6 +125,34 @@ Once installed, ask your assistant things like:
 - *"Show me the full content of pentesting-web/xss-cross-site-scripting/README.md"*
 - *"Generate a 5-day pentest plan for https://example.com with these endpoints..."*
 - *"Help me write a HackerOne report for the reflected XSS I found in /search."*
+
+## ⚙️ Environment variables
+
+| Var | Default | Description |
+|---|---|---|
+| `TRANSPORT` | `stdio` | `stdio` or `http` |
+| `PORT` | `3000` | HTTP port (when `TRANSPORT=http`) |
+| `HOST` | `0.0.0.0` | HTTP bind address |
+| `MCP_STATELESS` | `false` | `true` for serverless (Vercel) — no session state |
+| `HACKTRICKS_PATH` | auto | Path to `hacktricks/src` directory |
+
+See `.env.example` for a template.
+
+## 📁 Project structure
+```
+hackMCP/
+├── api/index.ts          # Vercel serverless entrypoint
+├── src/
+│   ├── index.ts          # Dual transport dispatcher (stdio / http)
+│   ├── http-server.ts    # Express + StreamableHTTP transport
+│   ├── data/             # Knowledge base (curated + HackTricks index)
+│   ├── tools/            # 8 MCP tools
+│   ├── resources/        # 12 MCP resources
+│   └── prompts/          # 8 MCP prompts
+├── hacktricks/src/       # Bundled HackTricks wiki (981 .md files)
+├── vercel.json           # Vercel deployment config
+└── package.json
+```
 
 ## ⚖️ Disclaimer
 
